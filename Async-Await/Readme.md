@@ -104,3 +104,74 @@ fetchImages { result in
 
 Each closure adds another level of indentation, which makes it harder to follow the order of execution.
 
+### Async await method
+Rewriting the above code example by making use of `async-await` explains best what structured concurrency does:
+
+```swift
+do {
+    // 1. Call the method
+    let images = try await fetchImages()
+    // 2. Fetch images method returns
+    
+    // 3. Call the resize method
+    let resizedImages = try await resizeImages(images)
+    // 4. Resize method returns
+    
+    print("Fetched \(images.count) images.")
+} catch {
+    print("Fetching images failed with error \(error)")
+}
+// 5. The calling method exits
+```
+
+The order of execution is linear and, therefore, easy to follow and easy to reason about. Understanding asynchronous code will be easier while we’re still performing sometimes complex asynchronous tasks.
+
+## Async methods call in a function that does not support concurrenc
+While using async-await for the first time, you might run into an error like
+
+```swift
+func fetchData() {
+    do {
+        try await fetchImages()
+    } catch {
+        // .. handle error
+    }
+}
+```
+
+```
+‘async’ call in a function that does not support concurrency.
+```
+
+This error occurs as we try to call an asynchronous method from a synchronous calling environment that does not support concurrency. We can solve this error by either defining our `fetchData` method as async as well:
+
+```swift
+func fetchData() async {
+    do {
+        try await fetchImages()
+    } catch {
+        // .. handle error
+    }
+}
+```
+
+However, this would move the error to a different place. Instead, we could use the `Task.init` method to call the asynchronous method from a new task that does support concurrency and assign the outcome result to a property in our view model:
+
+```swift
+final class ContentViewModel: ObservableObject {
+    
+    @Published var images: [UIImage] = []
+    
+    func fetchData() {
+        Task.init {
+            do {
+                self.images = try await fetchImages()
+            } catch {
+                // .. handle error
+            }
+        }
+    }
+}
+```
+
+Using the async method using the trailing closure, we create an environment in which we can call asynchronous methods. The fetch data method returns as soon as the async method is called, after which all asynchronous callbacks will happen within the closure.
