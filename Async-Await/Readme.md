@@ -5,20 +5,18 @@ Async await is part of the new structured concurrency changes that arrived in **
 
 ## What is Async?
 `Async` stands for asynchronous and can be seen as a method attribute making it clear that a method performs asynchronous work. An example of such a method looks as follows:
-```
+
+```swift
 func fetchImages() async throws -> [UIImage] {
     // .. perform data request
 }
 ```
 The `fetchImages` method is defined as async throwing, which means that it’s performing a failable asynchronous job. The method would return a collection of images if everything went well or throws an error if something went wrong.
 
-## Traditional Way
-Traditionally, if we wanted to do an `Async` operation, you generally add a `closure`, `completion handler`, or a `callback` (kind of names of same thing) to a function.
-
 ## How async replaces closure completion callbacks
 Async methods replace the often seen closure completion callbacks. Completion callbacks were common in Swift to return from an asynchronous task, often combined with a Result type parameter. The above method would have been written as followed:
 
-```
+```swift
 func fetchImages(completion: (Result<[UIImage], Error>) -> Void) {
     // .. perform data request
 }
@@ -35,7 +33,7 @@ Defining a method using a `completion closure` is still possible in Swift today,
 
 These downsides are based on the closure version using the relatively new `Result` enum. It’s likely that a lot of projects still make use of completion callbacks without this enumeration:
 
-```
+```swift
 func fetchImages(completion: ([UIImage]?, Error?) -> Void) {
     // .. perform data request
 }
@@ -45,7 +43,7 @@ Defining a method like this makes it even harder to reason about the outcome on 
 ## What is await?
 `Await` is the keyword to be used for calling async methods. You can see them as best friends in Swift as one will never go without the other. We could take a look at an example by calling our earlier defined async throwing fetch images method:
 
-```
+```swift
 do {
     let images = try await fetchImages()
     print("Fetched \(images.count) images.")
@@ -56,5 +54,53 @@ do {
 
 It might be hard to believe, but the above code example is performing an asynchronous task. Using the await keyword, we tell our program to await a result from the `fetchImages` method and only continue after a result arrived. This could either be a collection of images or an error if anything went wrong while fetching the images.
 
-## Async/await Method
-This is where async/await enters in
+## What is structured concurrency
+Structured concurrency with async-await method calls makes it easier to reason about the order of execution. Methods are linearly executed without going back and forth like you would with closures. 
+
+### Traditional Way
+To explain this better, we can look at how we would call the above code example before structured concurrency arrived. Traditionally, if we wanted to do an `Async` operation, you generally add a `closure`, `completion handler`, or a `callback` (kind of names of same thing) to a function.
+
+```swift
+// 1. Call the method
+fetchImages { result in
+    // 3. The asynchronous method returns
+    switch result {
+    case .success(let images):
+        print("Fetched \(images.count) images.")
+    case .failure(let error):
+        print("Fetching images failed with error \(error)")
+    }
+}
+// 2. The calling method exits
+```
+
+As you can see, the calling method returns before the images are fetched. Eventually, a result is received, and we go back into our flow within the completion callback. This is an unstructured order of execution and can be hard to follow. This is especially true if we would perform another asynchronous method within our completion callback which would add another closure callback:
+
+```swift
+// 1. Call the method
+fetchImages { result in
+    // 3. The asynchronous method returns
+    switch result {
+    case .success(let images):
+        print("Fetched \(images.count) images.")
+        
+        // 4. Call the resize method
+        resizeImages(images) { result in
+            // 6. Resize method returns
+            switch result {
+            case .success(let images):
+                print("Decoded \(images.count) images.")
+            case .failure(let error):
+                print("Decoding images failed with error \(error)")
+            }
+        }
+        // 5. Fetch images method returns
+    case .failure(let error):
+        print("Fetching images failed with error \(error)")
+    }
+}
+// 2. The calling method exits
+```
+
+Each closure adds another level of indentation, which makes it harder to follow the order of execution.
+
