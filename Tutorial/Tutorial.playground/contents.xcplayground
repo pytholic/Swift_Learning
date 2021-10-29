@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<playground version='6.0' target-platform='ios' buildActiveScheme='true' executeOnSourceChanges='true' importAppTypes='true'>
+    <pages>
+        <page name='lesson2_DataType'/>
+        <page name='lesson1_variables'/>
+        <page name='lesson3_IfStatements'/>
+        <page name='lesson4_SwitchStatements'/>
+        <page name='lesson5_Loops'/>
+        <page name='lesson6_Functions'/>
+        <page name='lesson7_Classes'/>
+        <page name='lesson8_Inheritance'/>
+        <page name='lesson9_UIKit'/>
+        <page name='lesson10_Initializers'/>
+        <page name='lesson11_Optionals'/>
+        <page name='lesson12_Properties'/>
+        <page name='lesson13_Initializers2'/>
+        <page name='lesson14_Arrays'/>
+        <page name='lesson15_Dictionaries'/>
+    </pages>
+</playground>
